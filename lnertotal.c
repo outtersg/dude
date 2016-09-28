@@ -80,10 +80,20 @@ void RacineInit(Racine * racine, const char * chemin)
 	racine->nInodesAlloues = 0;
 }
 
+Chemin * RacineInode(struct Racine * racine, uint32_t inode)
+{
+	int pos;
+	int trouve;
+	TROUVER(trouve, pos, inode, CorrInode, inode, racine->inodes, racine->nInodes);
+	
+	return NULL;
+}
+
 /*- Boulot -------------------------------------------------------------------*/
 
 void analyser(Racine * racine, char * nom, uint32_t inode)
 {
+	RacineInode(racine, inode);
 }
 
 
