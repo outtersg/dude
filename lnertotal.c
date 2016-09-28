@@ -23,12 +23,23 @@ Chemin * CheminNouveau(Chemin * pere, const char * chemin)
 	return n;
 }
 
+/*- Inodes -------------------------------------------------------------------*/
+
+typedef struct CorrInode
+{
+	uint32_t inode;
+	Chemin * chemin;
+} CorrInode;
+
 /*- Racine -------------------------------------------------------------------*/
 
 typedef struct Racine
 {
 	Chemin * cheminActuel;
 	char chaineCheminActuel[MAXPATHLEN + 1];
+	CorrInode * inodes;
+	int nInodes;
+	int nInodesAlloues;
 } Racine;
 
 void RacineInit(Racine * racine, const char * chemin)
@@ -41,6 +52,10 @@ void RacineInit(Racine * racine, const char * chemin)
 	racine->cheminActuel = CheminNouveau(NULL, racine->chaineCheminActuel);
 	racine->chaineCheminActuel[tailleChemin] = '/';
 	racine->chaineCheminActuel[tailleChemin + 1] = 0;
+	
+	racine->inodes = NULL;
+	racine->nInodes = 0;
+	racine->nInodesAlloues = 0;
 }
 
 /*- Boulot -------------------------------------------------------------------*/
