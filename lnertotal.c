@@ -6,6 +6,28 @@
 
 /* Cet utilitaire est destiné à tourner sur un Mac OS X 10.8; les optimisations du style linkat, fdopendir, sont donc remises à plus tard. */
 
+/*- Basiques -----------------------------------------------------------------*/
+
+#define TROUVER(trouve, pos, quoi, Type, champ, entrees, nEntrees) \
+	do \
+	{ \
+		Type * d = entrees; \
+		Type * f = &entrees[nEntrees]; \
+		Type * ptr; \
+		while(f > d) \
+			if((ptr = (Type *)(((uint64_t)d + (uint64_t)f) / 2))->champ == quoi) \
+				break; \
+			else if(ptr->champ < quoi) \
+				d = &ptr[1]; \
+			else \
+				f = ptr; \
+		if((trouve = (f > d))) \
+			pos = ptr - entrees; \
+		else \
+			pos = d - entrees; \
+	} \
+	while(0);
+
 /*- Chemin -------------------------------------------------------------------*/
 
 typedef struct Chemin
