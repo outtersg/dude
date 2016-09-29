@@ -178,19 +178,30 @@ char * CheminComplet(Chemin * chemin, char * chaineChemin)
 
 int CheminRaccrocher(Chemin * chemin, Chemin * dossierFichierARaccrocher, char * cheminARaccrocher)
 {
-	char chaineDossierSource[MAXPATHLEN];
+	char chaineChemin[MAXPATHLEN];
+	char raccrocheTemp[MAXPATHLEN];
+	int tailleRaccroche;
 	
-	char * chaineChemin = CheminComplet(chemin, NULL);
+	CheminComplet(chemin, chaineChemin);
 	
-	fprintf(stdout, "%s <- %s/%s\n", chaineChemin, cheminARaccrocher, CheminComplet(dossierFichierARaccrocher, chaineDossierSource));
+	fprintf(stdout, "%s <- %s/%s\n", chaineChemin, CheminComplet(dossierFichierARaccrocher, NULL), cheminARaccrocher);
 	
 	if(g_realiser)
 	{
-		/* À FAIRE: sécurisation. Ici si le process meurt entre l'unlink et le link, on perd le fichier. */
-		unlink(cheminARaccrocher);
-		if(link(chaineChemin, cheminARaccrocher) != 0)
+		strcpy(raccrocheTemp, cheminARaccrocher);
+		tailleRaccroche = strlen(cheminARaccrocher);
+		raccrocheTemp[tailleRaccroche] = '.';
+		raccrocheTemp[tailleRaccroche + 7] = 0;
+		mktemp6(&raccrocheTemp[tailleRaccroche + 1]);
+		if(link(chaineChemin, raccrocheTemp) != 0)
 		{
-			err("link(%s, %s): %s", chaineChemin, cheminARaccrocher, strerror(errno));
+			err("link(%s, %s): %s", chaineChemin, raccrocheTemp, strerror(errno));
+			return -1;
+		}
+		if(rename(raccrocheTemp, cheminARaccrocher) != 0)
+		{
+			err("rename(%s, %s): %s", raccrocheTemp, cheminARaccrocher, strerror(errno));
+			unlink(raccrocheTemp);
 			return -1;
 		}
 	}
