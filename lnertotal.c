@@ -34,6 +34,41 @@ void err(char * quoi, ...)
 		if(!(trouve = (_f > _d))) \
 			pos = _d; \
 	} \
+	while(0)
+
+#define PLACERN(Type, entrees, nEntrees, nEntreesAllouees, pos, tailleAlloc) \
+	do \
+	{ \
+		if(nEntrees >= nEntreesAllouees) \
+		{ \
+			nEntreesAllouees += nEntreesAllouees > tailleAlloc * 16 ? nEntreesAllouees / 16 : tailleAlloc; \
+			Type * entrees2 = (Type *)malloc(nEntreesAllouees * sizeof(Type)); \
+			if(entrees) \
+			{ \
+			memcpy(entrees2, entrees, pos * sizeof(Type)); \
+			free(entrees); \
+			} \
+			entrees = entrees2; \
+		} \
+		if(nEntrees > pos) \
+			memcpy(&entrees[pos + 1], &entrees[pos], (nEntrees - pos) * sizeof(Type)); \
+		++nEntrees; \
+	} \
+	while(0);
+
+#define PLACER(Type, entrees, nEntrees, nEntreesAllouees, pos) PLACERN(Type, entrees, nEntrees, nEntreesAllouees, pos, 64)
+
+#define TROUVEROUCREER(trouve, pos, quoi, Type, champ, entrees, nEntrees, nEntreesAllouees, init) \
+	do \
+	{ \
+		TROUVER(trouve, pos, quoi, Type, champ, entrees, nEntrees); \
+		if(!trouve) \
+		{ \
+			PLACER(Type, entrees, nEntrees, nEntreesAllouees, pos); \
+			entrees[pos].champ = quoi; \
+			init; \
+		} \
+	} \
 	while(0);
 
 /*- Chemin -------------------------------------------------------------------*/
