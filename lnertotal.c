@@ -1,4 +1,5 @@
 #include <stdlib.h>
+#include <errno.h>
 #include <string.h>
 #include <sys/param.h>
 #include <stdio.h>
