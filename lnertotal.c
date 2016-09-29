@@ -1,5 +1,6 @@
 #include <stdlib.h>
 #include <errno.h>
+#include <unistd.h>
 #include <string.h>
 #include <sys/param.h>
 #include <stdio.h>
@@ -126,7 +127,6 @@ typedef struct CorrInode
 typedef struct Racine
 {
 	Chemin * cheminActuel;
-	char chaineCheminActuel[MAXPATHLEN + 1];
 	CorrInode * inodes;
 	int nInodes;
 	int nInodesAlloues;
@@ -134,14 +134,7 @@ typedef struct Racine
 
 void RacineInit(Racine * racine, const char * chemin)
 {
-	int tailleChemin = strlen(chemin);
-	while(tailleChemin > 1 && chemin[tailleChemin - 1] == '/')
-		--tailleChemin;
-	strcpy(&racine->chaineCheminActuel[0], chemin);
-	racine->chaineCheminActuel[tailleChemin] = 0;
-	racine->cheminActuel = CheminNouveau(NULL, racine->chaineCheminActuel);
-	racine->chaineCheminActuel[tailleChemin] = '/';
-	racine->chaineCheminActuel[tailleChemin + 1] = 0;
+	racine->cheminActuel = CheminNouveau(NULL, chemin);
 	
 	racine->inodes = NULL;
 	racine->nInodes = 0;
@@ -159,17 +152,15 @@ Chemin * RacineInode(struct Racine * racine, uint32_t inode)
 
 /*- Boulot -------------------------------------------------------------------*/
 
-void analyser(Racine * racine, char * nom, uint32_t inode)
+void analyser(Racine * racine, struct dirent * f)
 {
-	RacineInode(racine, inode);
+	RacineInode(racine, f);
 }
 
 
 void parcourir(Racine * racine, char * nom)
 {
-	int tailleChaineCheminActuel = strlen(&racine->chaineCheminActuel[0]);
 	Chemin * cheminActuel = racine->cheminActuel;
-	char * chaineCheminActuelComplete = NULL;
 	
 	int tailleNom = strlen(nom);
 	Chemin * monChemin;
@@ -177,41 +168,39 @@ void parcourir(Racine * racine, char * nom)
 	{
 		Chemin * monChemin = CheminNouveau(NULL, nom);
 		racine->cheminActuel = monChemin;
-		chaineCheminActuelComplete = (char *)alloca(tailleChaineCheminActuel + 1);
-		strcpy(chaineCheminActuelComplete, racine->chaineCheminActuel);
-		strcpy(racine->chaineCheminActuel, nom);
-		racine->chaineCheminActuel[tailleNom] = '/';
-		racine->chaineCheminActuel[tailleNom + 1] = 0;
 	}
 	else
 	{
 		Chemin * monChemin = CheminNouveau(racine->cheminActuel, nom);
 		racine->cheminActuel = monChemin;
-		strcpy(&racine->chaineCheminActuel[tailleChaineCheminActuel], nom);
-		racine->chaineCheminActuel[tailleChaineCheminActuel + tailleNom] = '/';
-		racine->chaineCheminActuel[tailleChaineCheminActuel + tailleNom + 1] = 0;
 	}
 	
 	DIR * dossier;
 	struct dirent * entree;
 	
-	dossier = opendir(racine->chaineCheminActuel);
+	dossier = opendir(nom);
+	if(!dossier)
+	{
+		err("Le dossier %s a disparu au moment d'y accéder", nom);
+		goto e0;
+	}
+	fchdir(dirfd(dossier));
 	while((entree = readdir(dossier)))
 	{
 		if(0 == strcmp(".", entree->d_name) || 0 == strcmp("..", entree->d_name))
 			continue;
 		if(entree->d_type == DT_DIR)
+		{
 			parcourir(racine, entree->d_name);
+			fchdir(dirfd(dossier));
+		}
 		else if(entree->d_type == DT_REG)
-			analyser(racine, entree->d_name, entree->d_fileno);
+			analyser(racine, entree);
 	}
 	closedir(dossier);
 	
+e0:
 	racine->cheminActuel = cheminActuel;
-	if(chaineCheminActuelComplete)
-		strcpy(racine->chaineCheminActuel, chaineCheminActuelComplete);
-	else
-		racine->chaineCheminActuel[tailleChaineCheminActuel] = 0;
 }
 
 int main(int argc, char ** argv)
@@ -224,6 +213,8 @@ int main(int argc, char ** argv)
 	char ** fichiers = (char **)malloc(argc * sizeof(char *)); /* Mieux vaut réserver trop que pas assez. */
 	Racine racine;
 	RacineInit(& racine, ".");
+	DIR * ici = opendir(".");
+	int fdIci = dirfd(ici);
 	
 	for(i = 0; ++i < argc;)
 		if(0 == strcmp(argv[i], "-r"))
@@ -237,5 +228,10 @@ int main(int argc, char ** argv)
 			++nFichiers;
 		}
 	for(i = 0; i < nFichiers; ++i)
+	{
+		fchdir(fdIci);
 		parcourir(& racine, fichiers[i]);
+	}
+	
+	closedir(ici);
 }
