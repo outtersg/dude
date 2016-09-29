@@ -1,5 +1,6 @@
 #include <stdlib.h>
 #include <errno.h>
+#include <fcntl.h>
 #include <unistd.h>
 #include <string.h>
 #include <sys/param.h>
@@ -137,6 +138,18 @@ char * CheminComplet(Chemin * chemin, char * chaineChemin)
 			chaineChemin[--tailleChemin] = '/';
 	}
 	return chaineChemin;
+}
+
+int crcChemin(Chemin * chemin, int taille, crc_t * ptrCrc)
+{
+	int f;
+	
+	f = open(CheminComplet(chemin, NULL), O_RDONLY);
+	if(f < 0) { err("Ouverture de %s impossible: %s", CheminComplet(chemin, NULL), strerror(errno)); return 0; }
+	crcFichier(f, taille, ptrCrc);
+	close(f);
+	
+	return 1;
 }
 
 /*- Inodes -------------------------------------------------------------------*/
