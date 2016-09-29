@@ -5,6 +5,7 @@
 #include <stdio.h>
 #include <dirent.h>
 #include <stdarg.h>
+#include <sys/mman.h>
 
 /* Cet utilitaire est destiné à tourner sur un Mac OS X 10.8; les optimisations du style linkat, fdopendir, sont donc remises à plus tard. */
 
@@ -71,6 +72,29 @@ void err(char * quoi, ...)
 		} \
 	} \
 	while(0);
+
+/*- Somme --------------------------------------------------------------------*/
+
+#include "crc32.c"
+typedef uint32_t crc_t;
+
+void crcFichier(int fd, size_t taille, crc_t * ptrCrc)
+{
+	void * mem = taille ? mmap(NULL, taille, PROT_READ, MAP_PRIVATE, fd, 0) : NULL;
+	if(mem == MAP_FAILED)
+	{
+		err("mmap a échoué: %s", strerror(errno));
+		exit(1);
+	}
+	#if 0
+	*ptrCrc = 0; /* À FAIRE: n'y a-t-il pas une valeur de départ pour les crc32? */
+	*ptrCrc = calculate_crc32c(*ptrCrc, mem, taille);
+	#else
+	crc32mem(mem, taille, ptrCrc);
+	#endif
+	if(mem)
+		munmap(mem, taille);
+}
 
 /*- Chemin -------------------------------------------------------------------*/
 
