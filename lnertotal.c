@@ -116,6 +116,29 @@ Chemin * CheminNouveau(Chemin * pere, const char * chemin)
 	return n;
 }
 
+static char tempCheminComplet[MAXPATHLEN];
+
+char * CheminComplet(Chemin * chemin, char * chaineChemin)
+{
+	Chemin * ptr;
+	int tailleChemin;
+	int tailleSegment;
+	
+	if(!chaineChemin) chaineChemin = tempCheminComplet;
+	
+	for(ptr = chemin, tailleChemin = -1; ptr; ptr = ptr->p)
+		tailleChemin += 1 + strlen(ptr->c);
+	chaineChemin[tailleChemin] = 0;
+	for(ptr = chemin; ptr;)
+	{
+		tailleChemin -= (tailleSegment = strlen(ptr->c));
+		memcpy(&chaineChemin[tailleChemin], ptr->c, tailleSegment);
+		if((ptr = ptr->p))
+			chaineChemin[--tailleChemin] = '/';
+	}
+	return chaineChemin;
+}
+
 /*- Inodes -------------------------------------------------------------------*/
 
 typedef struct CorrInode
