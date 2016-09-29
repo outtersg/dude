@@ -26,6 +26,27 @@ void err(char * quoi, ...)
 	va_end(args);
 }
 
+char B64[64];
+
+void initB64()
+{
+	/* Inspiré du code du base64. */
+	
+	int i;
+	char c;
+
+	i = -1;
+	for(c = 'A'; c <= 'Z'; ++c)
+		B64[++i] = c;
+	for(c = 'a'; c <= 'z'; ++c)
+		B64[++i] = c;
+	for(c = '0'; c <= '9'; ++c)
+		B64[++i] = c;
+	/* Petite entorse au base64, pour du nom de fichier. */
+	B64[++i] = '_';
+	B64[++i] = '-';
+}
+
 #define TROUVER(trouve, pos, quoi, Type, champ, entrees, nEntrees) \
 	do \
 	{ \
@@ -402,6 +423,9 @@ int main(int argc, char ** argv)
 			fichiers[0] = argv[i];
 			++nFichiers;
 		}
+	
+	initB64();
+	
 	for(i = 0; i < nFichiers; ++i)
 	{
 		fchdir(fdIci);
