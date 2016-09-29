@@ -5,6 +5,7 @@
 #include <string.h>
 #include <sys/param.h>
 #include <stdio.h>
+#include <time.h>
 #include <dirent.h>
 #include <stdarg.h>
 #include <sys/stat.h>
@@ -45,6 +46,19 @@ void initB64()
 	/* Petite entorse au base64, pour du nom de fichier. */
 	B64[++i] = '_';
 	B64[++i] = '-';
+}
+
+void mktemp6(char * ptr)
+{
+	int val = rand();
+	int n;
+	int c;
+	
+	for(n = 6; --n >= 0; ++ptr, val >>= 6)
+	{
+		c = val & 0x03F;
+		*ptr = B64[c];
+	}
 }
 
 #define TROUVER(trouve, pos, quoi, Type, champ, entrees, nEntrees) \
@@ -425,6 +439,7 @@ int main(int argc, char ** argv)
 		}
 	
 	initB64();
+	srand(time(NULL));
 	
 	for(i = 0; i < nFichiers; ++i)
 	{
