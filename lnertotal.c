@@ -140,6 +140,27 @@ char * CheminComplet(Chemin * chemin, char * chaineChemin)
 	return chaineChemin;
 }
 
+int CheminRaccrocher(Chemin * chemin, Chemin * dossierFichierARaccrocher, char * cheminARaccrocher)
+{
+	char chaineDossierSource[MAXPATHLEN];
+	
+	char * chaineChemin = CheminComplet(chemin, NULL);
+	
+	fprintf(stdout, "%s <- %s/%s\n", chaineChemin, cheminARaccrocher, CheminComplet(dossierFichierARaccrocher, chaineDossierSource));
+	
+	if(g_realiser)
+	{
+		/* À FAIRE: sécurisation. Ici si le process meurt entre l'unlink et le link, on perd le fichier. */
+		unlink(cheminARaccrocher);
+		if(link(chaineChemin, cheminARaccrocher) != 0)
+		{
+			err("link(%s, %s): %s", chaineChemin, cheminARaccrocher, strerror(errno));
+			return -1;
+		}
+	}
+	return 0;
+}
+
 int crcChemin(Chemin * chemin, int taille, crc_t * ptrCrc)
 {
 	int f;
