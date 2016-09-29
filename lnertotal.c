@@ -259,6 +259,10 @@ typedef struct Racine
 	CorrInode * inodes;
 	int nInodes;
 	int nInodesAlloues;
+	
+	Taillis * taillis;
+	int nTaillis;
+	int nTaillisAlloues;
 } Racine;
 
 void RacineInit(Racine * racine, const char * chemin)
@@ -268,6 +272,10 @@ void RacineInit(Racine * racine, const char * chemin)
 	racine->inodes = NULL;
 	racine->nInodes = 0;
 	racine->nInodesAlloues = 0;
+	
+	racine->taillis = NULL;
+	racine->nTaillis = 0;
+	racine->nTaillisAlloues = 0;
 }
 
 Chemin * RacineInode(struct Racine * racine, uint32_t inode)
