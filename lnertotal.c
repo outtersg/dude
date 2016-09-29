@@ -11,20 +11,17 @@
 #define TROUVER(trouve, pos, quoi, Type, champ, entrees, nEntrees) \
 	do \
 	{ \
-		Type * d = entrees; \
-		Type * f = &entrees[nEntrees]; \
-		Type * ptr; \
-		while(f > d) \
-			if((ptr = (Type *)(((uint64_t)d + (uint64_t)f) / 2))->champ == quoi) \
+		int _d = 0; \
+		int _f = nEntrees; \
+		while(_f > _d) \
+			if(entrees[pos = (_d + _f) / 2].champ == quoi) \
 				break; \
-			else if(ptr->champ < quoi) \
-				d = &ptr[1]; \
+			else if(entrees[pos].champ < quoi) \
+				_d = pos + 1; \
 			else \
-				f = ptr; \
-		if((trouve = (f > d))) \
-			pos = ptr - entrees; \
-		else \
-			pos = d - entrees; \
+				_f = pos; \
+		if(!(trouve = (_f > _d))) \
+			pos = _d; \
 	} \
 	while(0);
 
