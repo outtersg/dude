@@ -156,7 +156,7 @@ int crcChemin(Chemin * chemin, int taille, crc_t * ptrCrc)
 
 typedef struct CorrInode
 {
-	uint32_t inode;
+	ino_t inode;
 	Chemin * chemin;
 } CorrInode;
 
