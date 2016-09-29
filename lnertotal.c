@@ -7,6 +7,7 @@
 #include <stdio.h>
 #include <dirent.h>
 #include <stdarg.h>
+#include <sys/stat.h>
 #include <sys/mman.h>
 
 /* Cet utilitaire est destiné à tourner sur un Mac OS X 10.8; les optimisations du style linkat, fdopendir, sont donc remises à plus tard. */
@@ -180,6 +181,75 @@ typedef struct CorrInode
 	ino_t inode;
 	Chemin * chemin;
 } CorrInode;
+
+/*- Tailles ------------------------------------------------------------------*/
+
+#define D_CRC_CALCULE 0x01
+
+typedef struct InfosFichier
+{
+	Chemin * chemin;
+	crc_t crc;
+	uint32_t drapeaux;
+} InfosFichier;
+
+void InfosFichierInit(InfosFichier * infos, Chemin * chemin)
+{
+	infos->chemin = chemin;
+	infos->drapeaux = 0;
+}
+
+typedef struct Taillis
+{
+	size_t taille;
+	InfosFichier * fichiers;
+	int nFichiers;
+	int nFichiersAlloues;
+} Taillis;
+
+void TaillisInitHorsCle(Taillis * taillis)
+{
+	taillis->fichiers = NULL;
+	taillis->nFichiers = 0;
+	taillis->nFichiersAlloues = 0;
+}
+
+Chemin * TaillisTrouverOuCreer(Taillis * taillis, Chemin * cheminDossier, struct dirent * fichier, struct stat * infos, int fd)
+{
+	InfosFichier infosFichier;
+	infosFichier.drapeaux = 0;
+	int pos;
+	
+	for(pos = -1; ++pos < taillis->nFichiers;)
+	{
+		/* On ne calcule le crc qu'ici, si un autre fichier de la même taille existe déjà. Inutile de le calculer si le fichier est tout seul (sans passage dans la boucle). */
+		
+		if(pos == 0)
+		{
+			crcFichier(fd, infos->st_size, &infosFichier.crc);
+			infosFichier.drapeaux |= D_CRC_CALCULE;
+		}
+		
+		/* Notre comparé a-t-il déjà été calculé? */
+		
+		if(!(taillis->fichiers[pos].drapeaux & D_CRC_CALCULE))
+		{
+			crcChemin(taillis->fichiers[pos].chemin, infos->st_size, &taillis->fichiers[pos].crc);
+			taillis->fichiers[pos].drapeaux |= D_CRC_CALCULE;
+		}
+		
+		if(!memcmp(&infosFichier.crc, &taillis->fichiers[pos].crc, sizeof(crc_t)))
+			return taillis->fichiers[pos].chemin;
+	}
+	
+	/* On crée, nous sommes le premier fichier de cette taille avec cette somme, nous devenons donc référence pour cette somme. */
+	
+	PLACERN(InfosFichier, taillis->fichiers, taillis->nFichiers, taillis->nFichiersAlloues, pos, 4);
+	infosFichier.chemin = CheminNouveau(cheminDossier, fichier->d_name);
+	memcpy(&taillis->fichiers[pos], &infosFichier, sizeof(InfosFichier));
+	
+	return NULL;
+}
 
 /*- Racine -------------------------------------------------------------------*/
 
