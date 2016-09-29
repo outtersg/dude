@@ -3,10 +3,21 @@
 #include <sys/param.h>
 #include <stdio.h>
 #include <dirent.h>
+#include <stdarg.h>
 
 /* Cet utilitaire est destiné à tourner sur un Mac OS X 10.8; les optimisations du style linkat, fdopendir, sont donc remises à plus tard. */
 
 /*- Basiques -----------------------------------------------------------------*/
+
+void err(char * quoi, ...)
+{
+	va_list args;
+	va_start(args, quoi);
+	fprintf(stderr, "# ");
+	vfprintf(stderr, quoi, args);
+	fprintf(stderr, "\n");
+	va_end(args);
+}
 
 #define TROUVER(trouve, pos, quoi, Type, champ, entrees, nEntrees) \
 	do \
