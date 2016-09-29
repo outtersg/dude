@@ -278,20 +278,55 @@ void RacineInit(Racine * racine, const char * chemin)
 	racine->nTaillisAlloues = 0;
 }
 
-Chemin * RacineInode(struct Racine * racine, uint32_t inode)
+Chemin * RacineIntegrerFichierATaillis(Racine * racine, struct dirent * f)
 {
+	Chemin * cheminRaccrochage = NULL;
+	struct stat infos;
+	size_t taille;
+	
+	int fd = open(f->d_name, O_RDONLY);
+	if(fstat(fd, & infos)) { err("Impossible d'interroger %s/%s: %s", CheminComplet(racine->cheminActuel, NULL), f->d_name, strerror(errno)); goto e0; }
+	taille = infos.st_size;
+	
+	/* Recherche par taille. */
+	
+	int posTaillis;
+	int trouveTaillis;
+	Taillis * taillis;
+	TROUVEROUCREER(trouveTaillis, posTaillis, taille, Taillis, taille, racine->taillis, racine->nTaillis, racine->nTaillisAlloues, TaillisInitHorsCle(& racine->taillis[posTaillis]));
+	taillis = &racine->taillis[posTaillis];
+	
+	/* Pour chacun des fichiers du taillis, on va essayer de voir si on ne peut s'y raccrocher. */
+	
+	cheminRaccrochage = TaillisTrouverOuCreer(taillis, racine->cheminActuel, f, & infos, fd);
+
+e0:
+	close(fd);
+	
+	return cheminRaccrochage;
+}
+
+Chemin * RacineRaccrochage(struct Racine * racine, struct dirent * f)
+{
+	Chemin * raccrochage;
 	int pos;
 	int trouve;
-	TROUVER(trouve, pos, inode, CorrInode, inode, racine->inodes, racine->nInodes);
+	TROUVEROUCREER(trouve, pos, f->d_fileno, CorrInode, inode, racine->inodes, racine->nInodes, racine->nInodesAlloues, );
 	
-	return NULL;
+	if(!trouve)
+		/* Si pas trouvé dans le cache par inode, c'est la première fois que l'on tombe sur cet inode. On recherche son Chemin de référence. */
+		racine->inodes[pos].chemin = RacineIntegrerFichierATaillis(racine, f);
+	
+	return racine->inodes[pos].chemin;
 }
 
 /*- Boulot -------------------------------------------------------------------*/
 
 void analyser(Racine * racine, struct dirent * f)
 {
-	RacineInode(racine, f);
+	Chemin * chemin;
+	if((chemin = RacineRaccrochage(racine, f)))
+		CheminRaccrocher(chemin, racine->cheminActuel, f->d_name);
 }
 
 
