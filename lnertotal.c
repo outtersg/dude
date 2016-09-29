@@ -10,6 +10,8 @@
 
 /* Cet utilitaire est destiné à tourner sur un Mac OS X 10.8; les optimisations du style linkat, fdopendir, sont donc remises à plus tard. */
 
+int g_realiser;
+
 /*- Basiques -----------------------------------------------------------------*/
 
 void err(char * quoi, ...)
@@ -216,9 +218,12 @@ int main(int argc, char ** argv)
 	DIR * ici = opendir(".");
 	int fdIci = dirfd(ici);
 	
+	g_realiser = 1;
 	for(i = 0; ++i < argc;)
 		if(0 == strcmp(argv[i], "-r"))
 			sens = -sens;
+		else if(0 == strcmp(argv[i], "-n"))
+			g_realiser = 0;
 		else if(sens > 0)
 			fichiers[nFichiers++] = argv[i];
 		else
