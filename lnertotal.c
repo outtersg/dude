@@ -430,7 +430,7 @@ int main(int argc, char ** argv)
 	int nFichiers;
 	char ** fichiers = (char **)malloc(argc * sizeof(char *)); /* Mieux vaut réserver trop que pas assez. */
 	Racine racine;
-	RacineInit(& racine, ".");
+	RacineInit(& racine, getcwd(NULL, MAXPATHLEN));
 	DIR * ici = opendir(".");
 	int fdIci = dirfd(ici);
 	
