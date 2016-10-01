@@ -148,7 +148,7 @@ Chemin * CheminNouveau(Chemin * pere, const char * chemin)
 {
 	Chemin * n = (Chemin *)malloc(sizeof(Chemin));
 	n->p = pere;
-	n->c = (char *)malloc(strlen(chemin));
+	n->c = (char *)malloc(strlen(chemin) + 1);
 	strcpy(n->c, chemin);
 	return n;
 }
