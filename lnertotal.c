@@ -10,6 +10,8 @@
 #include <stdarg.h>
 #include <sys/stat.h>
 #include <sys/mman.h>
+#include <sys/ioctl.h>
+#include <sys/ttycom.h>
 
 /* Cet utilitaire est destiné à tourner sur un Mac OS X 10.8; les optimisations du style linkat, fdopendir, sont donc remises à plus tard. */
 
@@ -131,6 +133,7 @@ void crcFichier(int fd, size_t taille, crc_t * ptrCrc)
 	*ptrCrc = 0; /* À FAIRE: n'y a-t-il pas une valeur de départ pour les crc32? */
 	*ptrCrc = calculate_crc32c(*ptrCrc, mem, taille);
 	#else
+	/* À FAIRE: appeler avancee durant les opérations longues (ex.: dans un CRC, si l'on a détecté en l'attaquant que l'on allait travailler sur un "gros" fichier). */
 	crc32mem(mem, taille, ptrCrc);
 	#endif
 	if(mem)
@@ -369,6 +372,65 @@ Chemin * RacineRaccrochage(struct Racine * racine, struct dirent * f)
 
 /*- Boulot -------------------------------------------------------------------*/
 
+time_t g_temps;
+int g_avancee_taille;
+char * g_avancee_tampon;
+int g_avancee_horloge_position;
+const char * g_avancee_horloge = "\\-/|";
+
+void initAvancee()
+{
+	g_temps = time(NULL);
+	struct winsize taille;
+	ioctl(STDOUT_FILENO, TIOCGWINSZ, &taille); /* À FAIRE: actualiser lorsque la fenêtre change de taille, avec g_avancee_tampon. */
+	g_avancee_taille = taille.ws_col - 3; /* Un caractère horloge à gauche suivi d'un espace, et un espace à droite. */
+	if(g_avancee_taille <= 0)
+		g_avancee_taille = 125;
+	g_avancee_tampon = (char *)malloc(g_avancee_taille + 2); /* Un caractère nul après le remplissage, un caractère nul après le chemin. */
+	g_avancee_horloge_position = 4;
+}
+
+void avancee(Racine * racine, char * nomFichier)
+{
+	time_t t1 = time(NULL);
+	if(t1 <= g_temps) return; /* À FAIRE: et si l'on ne vient pas de sortir une ligne complète. */
+	g_temps = t1;
+	
+	Chemin * chemin = racine->cheminActuel;
+	char * ptr;
+	char * ptrChemin;
+	int t;
+	
+	ptr = &g_avancee_tampon[g_avancee_taille + 2];
+	*--ptr = 0;
+	while(1)
+	{
+		if((ptr -= (t = strlen(nomFichier))) < &g_avancee_tampon[5])
+		{
+			ptr += t - 3;
+			bcopy("...", ptr, 3);
+			break;
+		}
+		else
+			bcopy(nomFichier, ptr, t);
+		
+		if(!chemin)
+			break;
+		nomFichier = chemin->c;
+		chemin = chemin->p;
+		*--ptr = '/';
+	}
+	ptrChemin = ptr;
+	*--ptr = 0;
+	
+	while(--ptr > g_avancee_tampon)
+		*ptr = ' ';
+	
+	if(--g_avancee_horloge_position < 0) g_avancee_horloge_position = 3;
+	fprintf(stdout, "%c %s%s\r", g_avancee_horloge[g_avancee_horloge_position], ptrChemin, ++ptr);
+	fflush(stdout);
+}
+
 void analyser(Racine * racine, struct dirent * f)
 {
 	Chemin * chemin;
@@ -408,6 +470,7 @@ void parcourir(Racine * racine, char * nom)
 	{
 		if(0 == strcmp(".", entree->d_name) || 0 == strcmp("..", entree->d_name))
 			continue;
+		avancee(racine, entree->d_name);
 		if(entree->d_type == DT_DIR)
 		{
 			parcourir(racine, entree->d_name);
@@ -451,6 +514,7 @@ int main(int argc, char ** argv)
 		}
 	
 	initB64();
+	initAvancee();
 	srand(time(NULL));
 	
 	for(i = 0; i < nFichiers; ++i)
