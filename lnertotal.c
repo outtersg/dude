@@ -88,11 +88,12 @@ void mktemp6(char * ptr)
 			if(entrees) \
 			{ \
 			memcpy(entrees2, entrees, pos * sizeof(Type)); \
+				memcpy(&entrees2[pos + 1], &entrees[pos], (nEntrees - pos) * sizeof(Type)); \
 			free(entrees); \
 			} \
 			entrees = entrees2; \
 		} \
-		if(nEntrees > pos) \
+		else if(nEntrees > pos) \
 			memcpy(&entrees[pos + 1], &entrees[pos], (nEntrees - pos) * sizeof(Type)); \
 		++nEntrees; \
 	} \
