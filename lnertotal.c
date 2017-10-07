@@ -16,6 +16,7 @@
 /* Cet utilitaire est destiné à tourner sur un Mac OS X 10.8; les optimisations du style linkat, fdopendir, sont donc remises à plus tard. */
 
 int g_realiser;
+int g_symbolique;
 
 /*- Basiques -----------------------------------------------------------------*/
 
@@ -180,6 +181,28 @@ char * CheminComplet(Chemin * chemin, char * chaineChemin)
 	return chaineChemin;
 }
 
+int lier(const char * pilier, const char * raccroche)
+{
+	if(!g_symbolique)
+	{
+		if(link(pilier, raccroche) != 0)
+		{
+			err("link(%s, %s): %s", pilier, raccroche, strerror(errno));
+			return -1;
+		}
+	}
+	else
+	{
+		if(symlink(pilier, raccroche) != 0)
+		{
+			err("symlink(%s, %s): %s", pilier, raccroche, strerror(errno));
+			return -1;
+		}
+	}
+	
+	return 0;
+}
+
 int CheminRaccrocher(Chemin * chemin, Chemin * dossierFichierARaccrocher, char * cheminARaccrocher)
 {
 	char chaineChemin[MAXPATHLEN];
@@ -197,11 +220,8 @@ int CheminRaccrocher(Chemin * chemin, Chemin * dossierFichierARaccrocher, char *
 		raccrocheTemp[tailleRaccroche] = '.';
 		raccrocheTemp[tailleRaccroche + 7] = 0;
 		mktemp6(&raccrocheTemp[tailleRaccroche + 1]);
-		if(link(chaineChemin, raccrocheTemp) != 0)
-		{
-			err("link(%s, %s): %s", chaineChemin, raccrocheTemp, strerror(errno));
+		if(lier(chaineChemin, raccrocheTemp) != 0)
 			return -1;
-		}
 		if(rename(raccrocheTemp, cheminARaccrocher) != 0)
 		{
 			err("rename(%s, %s): %s", raccrocheTemp, cheminARaccrocher, strerror(errno));
@@ -499,11 +519,14 @@ int main(int argc, char ** argv)
 	int fdIci = dirfd(ici);
 	
 	g_realiser = 1;
+	g_symbolique = 0;
 	for(i = 0; ++i < argc;)
 		if(0 == strcmp(argv[i], "-r"))
 			sens = -sens;
 		else if(0 == strcmp(argv[i], "-n"))
 			g_realiser = 0;
+		else if(0 == strcmp(argv[i], "-s"))
+			g_symbolique = 1;
 		else if(sens > 0)
 			fichiers[nFichiers++] = argv[i];
 		else
