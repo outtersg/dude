@@ -511,7 +511,7 @@ int main(int argc, char ** argv)
 	
 	int sens = -1;
 	int i;
-	int nFichiers;
+	int nFichiers = 0;
 	char ** fichiers = (char **)malloc(argc * sizeof(char *)); /* Mieux vaut réserver trop que pas assez. */
 	Racine racine;
 	RacineInit(& racine, getcwd(NULL, MAXPATHLEN));
