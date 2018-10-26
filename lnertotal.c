@@ -531,7 +531,7 @@ int main(int argc, char ** argv)
 			fichiers[nFichiers++] = argv[i];
 		else
 		{
-			memmove(&fichiers[1], fichiers, (argc - 1) * sizeof(char *));
+			memmove(&fichiers[1], fichiers, nFichiers * sizeof(char *));
 			fichiers[0] = argv[i];
 			++nFichiers;
 		}
