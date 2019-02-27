@@ -122,13 +122,13 @@ void mktemp6(char * ptr)
 #include "crc32.c"
 typedef uint32_t crc_t;
 
-void crcFichier(int fd, size_t taille, crc_t * ptrCrc)
+int crcFichier(int fd, size_t taille, crc_t * ptrCrc)
 {
 	void * mem = taille ? mmap(NULL, taille, PROT_READ, MAP_PRIVATE, fd, 0) : NULL;
 	if(mem == MAP_FAILED)
 	{
 		err("mmap a échoué: %s", strerror(errno));
-		exit(1);
+		return -1;
 	}
 	#if 0
 	*ptrCrc = 0; /* À FAIRE: n'y a-t-il pas une valeur de départ pour les crc32? */
@@ -139,6 +139,8 @@ void crcFichier(int fd, size_t taille, crc_t * ptrCrc)
 	#endif
 	if(mem)
 		munmap(mem, taille);
+	
+	return 0;
 }
 
 /*- Chemin -------------------------------------------------------------------*/
