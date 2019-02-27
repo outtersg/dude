@@ -241,7 +241,8 @@ int crcChemin(Chemin * chemin, int taille, crc_t * ptrCrc)
 	
 	f = open(cChemin, O_RDONLY);
 	if(f < 0) { err("Ouverture de %s impossible: %s", cChemin, strerror(errno)); return 0; }
-	crcFichier(f, taille, ptrCrc);
+	if(crcFichier(f, taille, ptrCrc) < 0)
+		fprintf(stderr, "# %s: calcul du CRC impossible\n", cChemin);
 	close(f);
 	
 	return 1;
@@ -299,7 +300,11 @@ Chemin * TaillisTrouverOuCreer(Taillis * taillis, Chemin * cheminDossier, struct
 		
 		if(pos == 0)
 		{
-			crcFichier(fd, infos->st_size, &infosFichier.crc);
+			if(crcFichier(fd, infos->st_size, &infosFichier.crc) < 0)
+			{
+				fprintf(stderr, "# %s: calcul du CRC impossible\n", fichier->d_name);
+				continue;
+			}
 			infosFichier.drapeaux |= D_CRC_CALCULE;
 		}
 		
