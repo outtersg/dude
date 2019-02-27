@@ -237,9 +237,10 @@ int CheminRaccrocher(Chemin * chemin, Chemin * dossierFichierARaccrocher, char *
 int crcChemin(Chemin * chemin, int taille, crc_t * ptrCrc)
 {
 	int f;
+	const char * cChemin = CheminComplet(chemin, NULL);
 	
-	f = open(CheminComplet(chemin, NULL), O_RDONLY);
-	if(f < 0) { err("Ouverture de %s impossible: %s", CheminComplet(chemin, NULL), strerror(errno)); return 0; }
+	f = open(cChemin, O_RDONLY);
+	if(f < 0) { err("Ouverture de %s impossible: %s", cChemin, strerror(errno)); return 0; }
 	crcFichier(f, taille, ptrCrc);
 	close(f);
 	
