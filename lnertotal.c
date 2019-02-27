@@ -17,6 +17,7 @@
 
 int g_realiser;
 int g_symbolique;
+long g_tailleMin;
 
 /*- Basiques -----------------------------------------------------------------*/
 
@@ -365,6 +366,7 @@ Chemin * RacineIntegrerFichierATaillis(Racine * racine, struct dirent * f)
 	int fd = open(f->d_name, O_RDONLY);
 	if(fstat(fd, & infos)) { err("Impossible d'interroger %s/%s: %s", CheminComplet(racine->cheminActuel, NULL), f->d_name, strerror(errno)); goto e0; }
 	taille = infos.st_size;
+	if(g_tailleMin >= 0 && taille < g_tailleMin) goto e0;
 	
 	/* Recherche par taille. */
 	
@@ -518,7 +520,7 @@ int main(int argc, char ** argv)
 	/* On pousse par défaut en sens inverse. Le dernier argument est considéré comme la référence (à analyser en premier, donc), afin que sur du 2016-*, le dernier en date soit considéré comme la référence. */
 	
 	int sens = -1;
-	int i;
+	int i, j;
 	int nFichiers = 0;
 	char ** fichiers = (char **)malloc(argc * sizeof(char *)); /* Mieux vaut réserver trop que pas assez. */
 	Racine racine;
@@ -528,6 +530,7 @@ int main(int argc, char ** argv)
 	
 	g_realiser = 1;
 	g_symbolique = 0;
+	g_tailleMin = -1;
 	for(i = 0; ++i < argc;)
 		if(0 == strcmp(argv[i], "-r"))
 			sens = -sens;
@@ -535,6 +538,23 @@ int main(int argc, char ** argv)
 			g_realiser = 0;
 		else if(0 == strcmp(argv[i], "-s"))
 			g_symbolique = 1;
+		else if(0 == strcmp(argv[i], "-size"))
+		{
+			if(argv[i + 1] && argv[i + 1][0] == '+')
+			{
+				for(j = 0; argv[i + 1][++j];)
+					if(argv[i + 1][j] < '0' || argv[i + 1][j] > '9')
+						break;
+				if(!argv[i + 1][j])
+				{
+					g_tailleMin = atol(&argv[i + 1][i]);
+					++i;
+					continue;
+				}
+			}
+			err("# L'option -size prend pour argument un +<taille min>, par exemple: -size +1");
+			exit(1);
+		}
 		else if(sens > 0)
 			fichiers[nFichiers++] = argv[i];
 		else
