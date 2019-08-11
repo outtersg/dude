@@ -25,9 +25,27 @@ void err(char * quoi, ...)
 {
 	va_list args;
 	va_start(args, quoi);
+	/* On prélève un échappement ANSI si présent; sinon on rougit pour faire ressortir l'erreur. */
+	char * q = quoi;
+	if(quoi[0] == '' && quoi[1] == '[')
+	{
+		while(*++q && *q != 'm') {}
+		if(*q == 'm')
+			++q;
+		else
+			q = quoi;
+	}
+	if(q > quoi)
+	{
+		fwrite(quoi, sizeof(char), q - quoi, stderr);
+		quoi = q;
+	}
+	else
+		fprintf(stderr, "[31m");
+	/* Ponte du message. */
 	fprintf(stderr, "# ");
 	vfprintf(stderr, quoi, args);
-	fprintf(stderr, "\n");
+	fprintf(stderr, "[0m\n");
 	va_end(args);
 }
 
