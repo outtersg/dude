@@ -191,6 +191,14 @@ int crcFichierLaborieux(int fd, crc_t * ptrCrc);
 int crcFichier(int fd, size_t taille, crc_t * ptrCrc)
 {
 	void * mem = taille ? mmap(NULL, taille, PROT_READ, MAP_PRIVATE, fd, 0) : NULL;
+	/* À FAIRE: évaluer la pertinence de mmap, ou optimiser.
+	 * Sur mon FreeBSD, avec un SSD sur un dossier avec un fichier de 900 Mo, sa copie parfaite, et une copie avec juste le dernier octet changeant:
+	 * - mmap CRC32: 13 s
+	 * - mmap xxh: 0,85 s
+	 * - sans mmap xxh: 0,73 s (on a juste rajouté un 1 || devant le mem == MAP_FAILED).
+	 * Donc plus rapide en se passant de mmap.
+	 * Ceci tient sans doute à ma taille de bloc (1 Mo): peut-on dire à mmap d'en faire autant?
+	 */
 	if(mem == MAP_FAILED)
 	{
 		err("[33m(mmap a échoué: %s, tentative par lecture de fichier)", strerror(errno));
