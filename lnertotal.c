@@ -165,6 +165,10 @@ void mktemp6(char * ptr)
 #include "crc32.c"
 typedef uint32_t crc_t;
 
+void initSomme()
+{
+}
+
 int crcFichier(int fd, size_t taille, crc_t * ptrCrc)
 {
 	void * mem = taille ? mmap(NULL, taille, PROT_READ, MAP_PRIVATE, fd, 0) : NULL;
@@ -610,6 +614,7 @@ int main(int argc, char ** argv)
 		}
 	
 	initB64();
+	initSomme();
 	initAvancee();
 	srand(time(NULL));
 	
