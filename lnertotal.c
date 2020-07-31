@@ -169,16 +169,15 @@ void initSomme()
 {
 }
 
+int crcFichierLaborieux(int fd, crc_t * ptrCrc);
+
 int crcFichier(int fd, size_t taille, crc_t * ptrCrc)
 {
 	void * mem = taille ? mmap(NULL, taille, PROT_READ, MAP_PRIVATE, fd, 0) : NULL;
 	if(mem == MAP_FAILED)
 	{
 		err("[33m(mmap a échoué: %s, tentative par lecture de fichier)", strerror(errno));
-		off_t pos;
-		if(lseek(fd, 0, SEEK_SET) < 0) { err("lseek a échoué: %s", strerror(errno)); return -1; }
-		if(crc32(fd, ptrCrc, &pos) != 0) { err("crc32 a échoué: %s", strerror(errno)); return -1; }
-		return 0;
+		return crcFichierLaborieux(fd, ptrCrc);
 	}
 	#if 0
 	*ptrCrc = 0; /* À FAIRE: n'y a-t-il pas une valeur de départ pour les crc32? */
@@ -190,6 +189,14 @@ int crcFichier(int fd, size_t taille, crc_t * ptrCrc)
 	if(mem)
 		munmap(mem, taille);
 	
+	return 0;
+}
+
+int crcFichierLaborieux(int fd, crc_t * ptrCrc)
+{
+	off_t pos;
+	if(lseek(fd, 0, SEEK_SET) < 0) { err("lseek a échoué: %s", strerror(errno)); return -1; }
+	if(crc32(fd, ptrCrc, &pos) != 0) { err("crc32 a échoué: %s", strerror(errno)); return -1; }
 	return 0;
 }
 
