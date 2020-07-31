@@ -20,6 +20,8 @@
  * SOFTWARE.
  */
 
+/* Avec xxHash: cc -DHAVE_XXH3 -I$HOME/local/include -L$HOME/local/lib -o /tmp/lnertotal lnertotal.c -lxxhash */
+
 #include <stdlib.h>
 #include <errno.h>
 #include <fcntl.h>
@@ -160,13 +162,28 @@ void mktemp6(char * ptr)
 
 /*- Somme --------------------------------------------------------------------*/
 
+#ifdef HAVE_XXH3
+#include <xxhash.h>
+typedef XXH64_hash_t crc_t;
+XXH3_state_t * g_calculCrc;
+#define TAILLE_BLOC 1048576
+char g_bloc[TAILLE_BLOC];
+#else
 #undef BUFSIZ
 #define BUFSIZ 1048576
 #include "crc32.c"
 typedef uint32_t crc_t;
+#endif
 
 void initSomme()
 {
+	#ifdef HAVE_XXH3
+	if(!(g_calculCrc = XXH3_createState()))
+	{
+		err("[33mXXH3_createState a échoué");
+		exit(1);
+	}
+	#endif
 }
 
 int crcFichierLaborieux(int fd, crc_t * ptrCrc);
@@ -179,7 +196,10 @@ int crcFichier(int fd, size_t taille, crc_t * ptrCrc)
 		err("[33m(mmap a échoué: %s, tentative par lecture de fichier)", strerror(errno));
 		return crcFichierLaborieux(fd, ptrCrc);
 	}
-	#if 0
+	
+	#ifdef HAVE_XXH3
+	*ptrCrc = XXH3_64bits(mem, taille);
+	#elif 0
 	*ptrCrc = 0; /* À FAIRE: n'y a-t-il pas une valeur de départ pour les crc32? */
 	*ptrCrc = calculate_crc32c(*ptrCrc, mem, taille);
 	#else
@@ -196,7 +216,18 @@ int crcFichierLaborieux(int fd, crc_t * ptrCrc)
 {
 	off_t pos;
 	if(lseek(fd, 0, SEEK_SET) < 0) { err("lseek a échoué: %s", strerror(errno)); return -1; }
+	#ifdef HAVE_XXH3
+	size_t taille;
+	if(XXH3_64bits_reset(g_calculCrc) == XXH_ERROR) { err("[33mXXH3_64bits_reset a échoué"); return -1; }
+	
+	while((taille = read(fd, g_bloc, TAILLE_BLOC)) > 0)
+		if(XXH3_64bits_update(g_calculCrc, g_bloc, taille) == XXH_ERROR) { err("[33mXXH3_64bits_update a échoué"); return -1; }
+	if(taille < 0) { err("read a échoué: %s", strerror(errno)); return -1; }
+	
+	*ptrCrc = XXH3_64bits_digest(g_calculCrc);
+	#else
 	if(crc32(fd, ptrCrc, &pos) != 0) { err("crc32 a échoué: %s", strerror(errno)); return -1; }
+	#endif
 	return 0;
 }
 
