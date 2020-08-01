@@ -225,7 +225,7 @@ int crcFichierLaborieux(int fd, crc_t * ptrCrc)
 	off_t pos;
 	if(lseek(fd, 0, SEEK_SET) < 0) { err("lseek a échoué: %s", strerror(errno)); return -1; }
 	#ifdef HAVE_XXH3
-	size_t taille;
+	ssize_t taille;
 	if(XXH3_64bits_reset(g_calculCrc) == XXH_ERROR) { err("[33mXXH3_64bits_reset a échoué"); return -1; }
 	
 	while((taille = read(fd, g_bloc, TAILLE_BLOC)) > 0)
