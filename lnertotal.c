@@ -496,7 +496,6 @@ e0:
 
 Chemin * RacineRaccrochage(struct Racine * racine, struct dirent * f)
 {
-	Chemin * raccrochage;
 	int pos;
 	int trouve;
 	TROUVEROUCREER(trouve, pos, f->d_fileno, CorrInode, inode, racine->inodes, racine->nInodes, racine->nInodesAlloues, );
