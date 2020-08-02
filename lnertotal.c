@@ -508,6 +508,25 @@ Chemin * RacineRaccrochage(struct Racine * racine, struct dirent * f)
 	return racine->inodes[pos].chemin;
 }
 
+void RacineRemplacer(struct Racine * racine, struct dirent * f)
+{
+	/* N.B.: notre technique est un peu suboptimale.
+	 * En effet en rentrant dans RacineIntegrerFichierATaillis, on recalcule la somme du fichier (alors qu'on l'avait déjà faite dans RacineRaccrochage).
+	 * Cependant on y est obligés, car le calcul a pu être fait il y a "longtemps" et il serait trop coûteux (en taille) d'en mémoriser le résultat simplement au cas où on rentre dans le présent cas.
+	 * Ex.: pour un fichier de taille 0, soit un inode x 0 associé à 32760 fichiers, et un inode y en possédant 10.
+	 * Notre programme, en tombant sur le premier y, va calculer sa somme, réaliser qu'elle est identique à celle d'x, et donc effectuer le raccrochage.
+	 * Pour les 6 suivants, l'inode y étant déjà mémorisé comme à raccrocher au chemin X (chemin de référence pour l'inode x), le raccrochage va se faire.
+	 * Mais pour la 8ème, erreur EMLINK, donc il nous faudrait avoir mémorisé (associé à l'inode y) soit l'InfosFichier *, soit le Chemin **, de x (pour pouvoir remplacer directement à cet endroit le chemin de référence par celui de y), soit a minima la somme calculée lors de la première rencontre de y (ce qui permettrait de hâter la recherche dans le Taillis).
+	 * Cet ajout d'un champ systématique dans la structure Inode gonflerait notre mémoire, pour une occurrence assez faible (dépasser les 32767 références, ce n'est pas courant), alors qu'on suppose le recalcul de la somme simple (car les fichiers dupliqués 32768 fois sont a priori les fichiers simples, du genre le fichier vide, dont la somme est assez rapide à recalculer).
+	 */
+	
+	int pos;
+	int trouve;
+	TROUVER(trouve, pos, f->d_fileno, CorrInode, inode, racine->inodes, racine->nInodes);
+	
+	racine->inodes[pos].chemin = RacineIntegrerFichierATaillis(racine, f, 1); /* NULL, en fait. */
+}
+
 /*- Boulot -------------------------------------------------------------------*/
 
 time_t g_temps;
@@ -573,7 +592,13 @@ void analyser(Racine * racine, struct dirent * f)
 {
 	Chemin * chemin;
 	if((chemin = RacineRaccrochage(racine, f)))
-		CheminRaccrocher(chemin, racine->cheminActuel, f->d_name);
+		if(CheminRaccrocher(chemin, racine->cheminActuel, f->d_name) == ERR_TROP_DE_LIENS)
+		{
+			/* Si trop de liens atterrissent sur le même inode (ex.: fichier-référence de taille 0), on commence une nouvelle série. Le présent inode servira de référence. */
+			err("[33mlink(%s): %s => nouvelle référence", CheminComplet(chemin, NULL), strerror(EMLINK));
+			RacineRemplacer(racine, f);
+			/* À FAIRE: un erreur si vraiment on n'y arrive pas. */
+		}
 }
 
 
