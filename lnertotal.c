@@ -241,6 +241,8 @@ int crcFichierLaborieux(int fd, crc_t * ptrCrc)
 
 /*- Chemin -------------------------------------------------------------------*/
 
+#define ERR_TROP_DE_LIENS -2
+
 typedef struct Chemin
 {
 	char * c;
@@ -285,6 +287,7 @@ int lier(const char * pilier, const char * raccroche)
 	{
 		if(link(pilier, raccroche) != 0)
 		{
+			if(errno == EMLINK) return ERR_TROP_DE_LIENS;
 			err("link(%s, %s): %s", pilier, raccroche, strerror(errno));
 			return -1;
 		}
@@ -306,6 +309,7 @@ int CheminRaccrocher(Chemin * chemin, Chemin * dossierFichierARaccrocher, char *
 	char chaineChemin[MAXPATHLEN];
 	char raccrocheTemp[MAXPATHLEN];
 	int tailleRaccroche;
+	int e;
 	
 	CheminComplet(chemin, chaineChemin);
 	
@@ -318,12 +322,14 @@ int CheminRaccrocher(Chemin * chemin, Chemin * dossierFichierARaccrocher, char *
 		raccrocheTemp[tailleRaccroche] = '.';
 		raccrocheTemp[tailleRaccroche + 7] = 0;
 		mktemp6(&raccrocheTemp[tailleRaccroche + 1]);
-		if(lier(chaineChemin, raccrocheTemp) != 0)
-			return -1;
+		if((e = lier(chaineChemin, raccrocheTemp)) != 0)
+			return e;
 		if(rename(raccrocheTemp, cheminARaccrocher) != 0)
 		{
-			err("rename(%s, %s): %s", raccrocheTemp, cheminARaccrocher, strerror(errno));
+			e = errno;
 			unlink(raccrocheTemp);
+			if(e == EMLINK) return ERR_TROP_DE_LIENS;
+			err("rename(%s, %s): %s", raccrocheTemp, cheminARaccrocher, strerror(e));
 			return -1;
 		}
 	}
