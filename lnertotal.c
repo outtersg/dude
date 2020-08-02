@@ -384,7 +384,7 @@ void TaillisInitHorsCle(Taillis * taillis)
 	taillis->nFichiersAlloues = 0;
 }
 
-Chemin * TaillisTrouverOuCreer(Taillis * taillis, Chemin * cheminDossier, struct dirent * fichier, struct stat * infos, int fd)
+Chemin * TaillisTrouverOuCreer(Taillis * taillis, Chemin * cheminDossier, struct dirent * fichier, struct stat * infos, int fd, char remplacer)
 {
 	InfosFichier infosFichier;
 	infosFichier.drapeaux = 0;
@@ -413,7 +413,14 @@ Chemin * TaillisTrouverOuCreer(Taillis * taillis, Chemin * cheminDossier, struct
 		}
 		
 		if(!memcmp(&infosFichier.crc, &taillis->fichiers[pos].crc, sizeof(crc_t)))
+		{
+			if(remplacer)
+			{
+				taillis->fichiers[pos].chemin = CheminNouveau(cheminDossier, fichier->d_name);
+				return NULL; /* Puisque nous remplaçons la référence, nous renvoyons le résultat comme si nous avions été créé référence. */
+			}
 			return taillis->fichiers[pos].chemin;
+		}
 	}
 	
 	/* On crée, nous sommes le premier fichier de cette taille avec cette somme, nous devenons donc référence pour cette somme. */
@@ -452,7 +459,7 @@ void RacineInit(Racine * racine, const char * chemin)
 	racine->nTaillisAlloues = 0;
 }
 
-Chemin * RacineIntegrerFichierATaillis(Racine * racine, struct dirent * f)
+Chemin * RacineIntegrerFichierATaillis(Racine * racine, struct dirent * f, char devientNouvelleReference)
 {
 	Chemin * cheminRaccrochage = NULL;
 	struct stat infos;
@@ -473,7 +480,7 @@ Chemin * RacineIntegrerFichierATaillis(Racine * racine, struct dirent * f)
 	
 	/* Pour chacun des fichiers du taillis, on va essayer de voir si on ne peut s'y raccrocher. */
 	
-	cheminRaccrochage = TaillisTrouverOuCreer(taillis, racine->cheminActuel, f, & infos, fd);
+	cheminRaccrochage = TaillisTrouverOuCreer(taillis, racine->cheminActuel, f, & infos, fd, devientNouvelleReference);
 
 e0:
 	close(fd);
@@ -490,7 +497,7 @@ Chemin * RacineRaccrochage(struct Racine * racine, struct dirent * f)
 	
 	if(!trouve)
 		/* Si pas trouvé dans le cache par inode, c'est la première fois que l'on tombe sur cet inode. On recherche son Chemin de référence. */
-		racine->inodes[pos].chemin = RacineIntegrerFichierATaillis(racine, f);
+		racine->inodes[pos].chemin = RacineIntegrerFichierATaillis(racine, f, 0);
 	
 	return racine->inodes[pos].chemin;
 }
