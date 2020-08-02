@@ -502,6 +502,7 @@ Chemin * RacineRaccrochage(struct Racine * racine, struct dirent * f)
 	
 	if(!trouve)
 		/* Si pas trouvé dans le cache par inode, c'est la première fois que l'on tombe sur cet inode. On recherche son Chemin de référence. */
+		/* Un NULL peut nous être renvoyé si l'inode est élu référence pour sa somme de contrôle (il n'a pas à être raccroché à d'autres, ce sont les autres qui se raccrochent à lui). */
 		racine->inodes[pos].chemin = RacineIntegrerFichierATaillis(racine, f, 0);
 	
 	return racine->inodes[pos].chemin;
