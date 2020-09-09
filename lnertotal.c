@@ -140,7 +140,7 @@ void mktemp6(char * ptr)
 			entrees = entrees2; \
 		} \
 		else if(nEntrees > pos) \
-			memcpy(&entrees[pos + 1], &entrees[pos], (nEntrees - pos) * sizeof(Type)); \
+			memmove(&entrees[pos + 1], &entrees[pos], (nEntrees - pos) * sizeof(Type)); \
 		++nEntrees; \
 	} \
 	while(0);
