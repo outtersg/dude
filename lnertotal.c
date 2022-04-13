@@ -22,6 +22,9 @@
 
 /* Avec xxHash: cc -O3 -DHAVE_XXH3 -I$HOME/local/include -L$HOME/local/lib -o ~/bin/dude lnertotal.c -lxxhash */
 
+/* https://cboard.cprogramming.com/linux-programming/98668-[large-file][value-too-large-defined-data-type].html */
+#define _FILE_OFFSET_BITS 64
+
 #include <stdlib.h>
 #include <errno.h>
 #include <fcntl.h>
