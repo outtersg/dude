@@ -165,11 +165,11 @@ void mktemp6(char * ptr)
 #include <xxhash.h>
 typedef XXH64_hash_t crc_t;
 XXH3_state_t * g_calculCrc;
-#define TAILLE_BLOC 1048576
+#define TAILLE_BLOC 16777216
 char g_bloc[TAILLE_BLOC];
 #else
 #undef BUFSIZ
-#define BUFSIZ 1048576
+#define BUFSIZ 16777216
 #include "crc32.c"
 typedef uint32_t crc_t;
 #endif
