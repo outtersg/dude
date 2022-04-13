@@ -20,7 +20,7 @@
  * SOFTWARE.
  */
 
-/* Avec xxHash: cc -DHAVE_XXH3 -I$HOME/local/include -L$HOME/local/lib -o /tmp/lnertotal lnertotal.c -lxxhash */
+/* Avec xxHash: cc -O3 -DHAVE_XXH3 -I$HOME/local/include -L$HOME/local/lib -o ~/bin/dude lnertotal.c -lxxhash */
 
 #include <stdlib.h>
 #include <errno.h>
