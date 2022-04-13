@@ -483,6 +483,7 @@ Chemin * RacineIntegrerFichierATaillis(Racine * racine, struct dirent * f, char 
 	size_t taille;
 	
 	int fd = open(f->d_name, O_RDONLY);
+	if(fd < 0) { err("Impossible d'ouvrir %s/%s: %s", CheminComplet(racine->cheminActuel, NULL), f->d_name, strerror(errno)); goto emoinsun; }
 	if(fstat(fd, & infos)) { err("Impossible d'interroger %s/%s: %s", CheminComplet(racine->cheminActuel, NULL), f->d_name, strerror(errno)); goto e0; }
 	taille = infos.st_size;
 	if(g_tailleMin >= 0 && taille < g_tailleMin) goto e0;
@@ -501,7 +502,7 @@ Chemin * RacineIntegrerFichierATaillis(Racine * racine, struct dirent * f, char 
 
 e0:
 	close(fd);
-	
+emoinsun:
 	return cheminRaccrochage;
 }
 
