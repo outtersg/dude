@@ -189,6 +189,14 @@ int crcFichierLaborieux(int fd, crc_t * ptrCrc);
 
 int crcFichier(int fd, size_t taille, crc_t * ptrCrc)
 {
+	/* NOTE: problème du mmap
+	 * Sur certains OS, le mmap garde la totalité lue du fichier dans l'espace mémoire. Bonjour quand le fichier est gros: plus on lit et plus la taille du processus croît.
+	 */
+	/* NOTE: problème du mmap
+	 * Le mmap est très sympa, ceci dit lorsque le fichier est corrompu, c'est SIGBUS immédiatement.
+	 * Constaté après avoir passé quelques heures à essayer de tracer (while true ; do lsof ; sleep 1 ; done) pour trouver une faute de codage, d'alignement mémoire, de signed au lieu d'unsigned avec un fichier ayant pile pour taille la frontière 0x8000… dans la simple suite de mmap / XXH3_64bits.
+	 * Puis idée lumineuse: mon fichier est-il lisible? Un cp montra que non (en plus cp sur Mac est obstiné, il va tenter quinze fois avant d'abandonner).
+	 */
 	void * mem = taille ? mmap(NULL, taille, PROT_READ, MAP_PRIVATE, fd, 0) : NULL;
 	/* À FAIRE: évaluer la pertinence de mmap, ou optimiser.
 	 * Sur mon FreeBSD, avec un SSD sur un dossier avec un fichier de 900 Mo, sa copie parfaite, et une copie avec juste le dernier octet changeant:
@@ -213,7 +221,7 @@ int crcFichier(int fd, size_t taille, crc_t * ptrCrc)
 	/* À FAIRE: appeler avancee durant les opérations longues (ex.: dans un CRC, si l'on a détecté en l'attaquant que l'on allait travailler sur un "gros" fichier). */
 	crc32mem(mem, taille, ptrCrc);
 	#endif
-	if(mem)
+	if(mem && mem != MAP_FAILED)
 		munmap(mem, taille);
 	
 	return 0;
@@ -237,6 +245,10 @@ int crcFichierLaborieux(int fd, crc_t * ptrCrc)
 	#endif
 	return 0;
 }
+
+#ifdef NO_MMAP
+#define crcFichier(fd, taille, ptrCrc) crcFichierLaborieux(fd, ptrCrc)
+#endif
 
 /*- Chemin -------------------------------------------------------------------*/
 
